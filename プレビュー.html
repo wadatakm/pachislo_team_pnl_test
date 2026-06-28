@@ -160,7 +160,7 @@ html,body{margin:0;background:#000;height:100%;overflow:hidden;overscroll-behavi
 .memoempty{color:var(--text-muted)}
 .memoacts{display:flex;justify-content:flex-end;margin:0 0 4px;min-height:16px}
 .memo-full{font-size:16px;line-height:1.7;color:#d7d7db;white-space:pre-wrap;padding:6px 2px;flex:1;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch}
-.memo-edit{flex:1;min-height:0;width:100%;background:transparent;border:none;outline:none;font-size:17px;line-height:1.7;color:#e8e8ea;padding:6px 2px;font-family:inherit;resize:none;overflow-y:auto;-webkit-overflow-scrolling:touch;-webkit-tap-highlight-color:transparent}
+.memo-edit{flex:1;min-height:0;width:100%;background:transparent;border:none;outline:none;font-size:17px;line-height:1.7;color:#e8e8ea;padding:6px 2px 50vh;font-family:inherit;resize:none;overflow-y:auto;-webkit-overflow-scrolling:touch;-webkit-tap-highlight-color:transparent}
 .mlcalc{background:#0e0e10;border:0.5px solid var(--border-strong);border-radius:12px;padding:11px 13px;margin-bottom:6px}
 .mlcrow{display:flex;justify-content:space-between;align-items:baseline;padding:3px 0}
 .mlcrow .mll{font-size:12px;color:var(--text-muted)}
@@ -1003,11 +1003,28 @@ window.openMemoEdit=function(){
   const memo=document.getElementById('fmm')?.value||'';
   document.getElementById('memottl').textContent='メモを編集';
   document.getElementById('memohd').innerHTML=`<button class="tlink mut" onclick="closeMemo()">キャンセル</button><button class="tlink" style="margin-left:14px" onclick="memoDone()">完了</button>`;
-  document.getElementById('memobody').innerHTML=`<textarea class="memo-edit" id="memoEditArea" placeholder="メモを入力">${mlEsc(memo)}</textarea>`;
+  document.getElementById('memobody').innerHTML=`<textarea class="memo-edit" id="memoEditArea" placeholder="メモを入力" oninput="memoCaret()" onkeyup="memoCaret()" onclick="memoCaret()">${mlEsc(memo)}</textarea>`;
   openMemoSheet();
-  setTimeout(()=>{const t=document.getElementById('memoEditArea');if(t){t.focus();t.setSelectionRange(t.value.length,t.value.length);}},80);
+  setTimeout(()=>{const t=document.getElementById('memoEditArea');if(t){t.focus();t.setSelectionRange(t.value.length,t.value.length);memoCaret();}},120);
 };
-window.memoCaret=function(){};
+// カーソル行がテキストエリアの見えている範囲内（キーボードのすぐ上）に来るようスクロール
+window.memoCaret=function(){
+  const t=document.getElementById('memoEditArea'); if(!t) return;
+  const m=document.getElementById('__memoMirror')||(()=>{const d=document.createElement('div');d.id='__memoMirror';document.body.appendChild(d);return d;})();
+  const cs=getComputedStyle(t);
+  m.style.cssText=`position:absolute;visibility:hidden;white-space:pre-wrap;word-wrap:break-word;left:-9999px;top:0;width:${t.clientWidth}px;font-size:${cs.fontSize};font-family:${cs.fontFamily};font-weight:${cs.fontWeight};line-height:${cs.lineHeight};letter-spacing:${cs.letterSpacing};padding-top:${cs.paddingTop};padding-left:${cs.paddingLeft};padding-right:${cs.paddingRight};box-sizing:border-box`;
+  m.textContent=t.value.substring(0,t.selectionStart);
+  const marker=document.createElement('span'); marker.textContent='\u200b'; m.appendChild(marker);
+  const caretY=marker.offsetTop, lh=parseFloat(cs.lineHeight)||24;
+  // テキストエリアの実際に見えている高さ（キーボードを除く）
+  const vv=window.visualViewport;
+  const rect=t.getBoundingClientRect();
+  const visibleBottom = vv ? Math.min(rect.bottom, vv.offsetTop+vv.height) : rect.bottom;
+  const visibleH = Math.max(60, visibleBottom - rect.top); // 見えている高さ
+  const desired = caretY - (visibleH - lh*1.5); // カーソルが見える範囲の下端付近(=キーボードの少し上)
+  if(caretY < t.scrollTop + lh) t.scrollTop = Math.max(0, caretY - lh);
+  else if(caretY + lh > t.scrollTop + visibleH) t.scrollTop = desired;
+};
 window.memoDone=function(){
   const t=document.getElementById('memoEditArea'); const fmm=document.getElementById('fmm');
   if(t&&fmm) fmm.value=t.value;
