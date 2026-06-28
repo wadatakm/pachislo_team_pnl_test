@@ -1005,11 +1005,22 @@ window.openMemoEdit=function(){
   const memo=document.getElementById('fmm')?.value||'';
   document.getElementById('memottl').textContent='メモを編集';
   document.getElementById('memohd').innerHTML=`<button class="tlink mut" onclick="closeMemo()">キャンセル</button><button class="tlink" style="margin-left:14px" onclick="memoDone()">完了</button>`;
-  document.getElementById('memobody').innerHTML=`<textarea class="memo-edit" id="memoEditArea" placeholder="メモを入力">${mlEsc(memo)}</textarea>`;
+  document.getElementById('memobody').innerHTML=`<textarea class="memo-edit" id="memoEditArea" placeholder="メモを入力" oninput="memoCaret()" onkeyup="memoCaret()" onclick="memoCaret()">${mlEsc(memo)}</textarea>`;
   openMemoSheet();
-  const t=document.getElementById('memoEditArea');
-  const grow=()=>{ if(!t)return; t.style.height='auto'; t.style.height=t.scrollHeight+'px'; };
-  if(t){ t.addEventListener('input',grow); setTimeout(()=>{grow();t.focus();},80); }
+  setTimeout(()=>{const t=document.getElementById('memoEditArea');if(t){t.focus();t.setSelectionRange(t.value.length,t.value.length);memoCaret();}},80);
+};
+// 入力位置（カーソル）がテキストエリア内に見えるようスクロール
+window.memoCaret=function(){
+  const t=document.getElementById('memoEditArea'); if(!t) return;
+  const m=document.getElementById('__memoMirror')||(()=>{const d=document.createElement('div');d.id='__memoMirror';document.body.appendChild(d);return d;})();
+  const cs=getComputedStyle(t);
+  m.style.cssText=`position:absolute;visibility:hidden;white-space:pre-wrap;word-wrap:break-word;left:-9999px;top:0;width:${t.clientWidth}px;font:${cs.font};line-height:${cs.lineHeight};padding:${cs.padding};border:${cs.border};box-sizing:border-box`;
+  m.textContent=t.value.substring(0,t.selectionStart);
+  const marker=document.createElement('span'); marker.textContent='\u200b'; m.appendChild(marker);
+  const caretY=marker.offsetTop, lh=parseFloat(cs.lineHeight)||22;
+  const viewTop=t.scrollTop, viewBottom=viewTop+t.clientHeight;
+  if(caretY < viewTop+lh) t.scrollTop=Math.max(0,caretY-lh);
+  else if(caretY+lh > viewBottom) t.scrollTop=caretY+lh-t.clientHeight;
 };
 window.memoDone=function(){
   const t=document.getElementById('memoEditArea'); const fmm=document.getElementById('fmm');
