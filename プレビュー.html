@@ -159,8 +159,8 @@ html,body{margin:0;background:#000;height:100%;overflow:hidden;overscroll-behavi
 .memobox.exp{max-height:300px}
 .memoempty{color:var(--text-muted)}
 .memoacts{display:flex;justify-content:flex-end;margin:0 0 4px;min-height:16px}
-.memo-full{font-size:16px;line-height:1.7;color:#d7d7db;white-space:pre-wrap;padding:6px 2px 20vh}
-.memo-edit{display:block;width:100%;background:transparent;border:none;outline:none;font-size:17px;line-height:1.7;color:#e8e8ea;padding:2px 2px 40vh;font-family:inherit;resize:none;overflow:hidden;-webkit-tap-highlight-color:transparent}
+.memo-full{font-size:16px;line-height:1.7;color:#d7d7db;white-space:pre-wrap;padding:6px 2px;flex:1;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch}
+.memo-edit{flex:1;min-height:0;width:100%;background:transparent;border:none;outline:none;font-size:17px;line-height:1.7;color:#e8e8ea;padding:6px 2px;font-family:inherit;resize:none;overflow-y:auto;-webkit-overflow-scrolling:touch;-webkit-tap-highlight-color:transparent}
 .mlcalc{background:#0e0e10;border:0.5px solid var(--border-strong);border-radius:12px;padding:11px 13px;margin-bottom:6px}
 .mlcrow{display:flex;justify-content:space-between;align-items:baseline;padding:3px 0}
 .mlcrow .mll{font-size:12px;color:var(--text-muted)}
@@ -333,11 +333,10 @@ body.modal-open #wrap{overflow:hidden!important}
   <div style="position:relative;flex:1;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch" id="wrap">
     <div id="views"></div>
     <div id="fab-host"></div>
-    <div class="modal-bg" id="memobg" style="z-index:120">
-      <div class="modal" id="memosheet" style="height:88vh;max-height:88vh">
-        <div class="grab"></div>
-        <div class="mh"><span class="mt" id="memottl">メモ</span><span id="memohd"></span></div>
-        <div class="ms" id="memobody" style="padding:0 14px 14px"></div>
+    <div class="modal-bg" id="memobg" style="z-index:120;align-items:center;padding:0 14px">
+      <div id="memosheet" style="width:100%;max-width:460px;height:78vh;background:#0e0e10;border:0.5px solid var(--border);border-radius:18px;display:flex;flex-direction:column;overflow:hidden;animation:fabPop .2s ease-out">
+        <div class="mh" style="flex-shrink:0"><span class="mt" id="memottl">メモ</span><span id="memohd"></span></div>
+        <div id="memobody" style="flex:1;min-height:0;overflow:hidden;display:flex;flex-direction:column;padding:0 14px 12px"></div>
       </div>
     </div>
     <div class="modal-bg" id="mbg">
@@ -1006,9 +1005,7 @@ window.openMemoEdit=function(){
   document.getElementById('memohd').innerHTML=`<button class="tlink mut" onclick="closeMemo()">キャンセル</button><button class="tlink" style="margin-left:14px" onclick="memoDone()">完了</button>`;
   document.getElementById('memobody').innerHTML=`<textarea class="memo-edit" id="memoEditArea" placeholder="メモを入力">${mlEsc(memo)}</textarea>`;
   openMemoSheet();
-  const t=document.getElementById('memoEditArea');
-  const grow=()=>{ if(!t)return; t.style.height='auto'; t.style.height=t.scrollHeight+'px'; };
-  if(t){ t.addEventListener('input',grow); setTimeout(()=>{ grow(); t.focus(); t.setSelectionRange(t.value.length,t.value.length); },80); }
+  setTimeout(()=>{const t=document.getElementById('memoEditArea');if(t){t.focus();t.setSelectionRange(t.value.length,t.value.length);}},80);
 };
 window.memoCaret=function(){};
 window.memoDone=function(){
