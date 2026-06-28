@@ -159,9 +159,8 @@ html,body{margin:0;background:#000;height:100%;overflow:hidden;overscroll-behavi
 .memobox.exp{max-height:300px}
 .memoempty{color:var(--text-muted)}
 .memoacts{display:flex;justify-content:flex-end;margin:0 0 4px;min-height:16px}
-.memo-full{font-size:16px;line-height:1.7;color:#d7d7db;white-space:pre-wrap;padding:6px 2px;flex:1;min-height:0;overflow:auto;-webkit-overflow-scrolling:touch}
-.memo-edit{flex:1;min-height:0;width:100%;background:transparent;border:none;outline:none;font-size:17px;line-height:1.7;color:#e8e8ea;padding:2px;font-family:inherit;resize:none;overflow:auto;-webkit-overflow-scrolling:touch;touch-action:pan-y;-webkit-tap-highlight-color:transparent}
-#memobody{display:flex;flex-direction:column;overflow:hidden!important}
+.memo-full{font-size:16px;line-height:1.7;color:#d7d7db;white-space:pre-wrap;padding:6px 2px 20vh}
+.memo-edit{display:block;width:100%;background:transparent;border:none;outline:none;font-size:17px;line-height:1.7;color:#e8e8ea;padding:2px 2px 40vh;font-family:inherit;resize:none;overflow:hidden;-webkit-tap-highlight-color:transparent}
 .mlcalc{background:#0e0e10;border:0.5px solid var(--border-strong);border-radius:12px;padding:11px 13px;margin-bottom:6px}
 .mlcrow{display:flex;justify-content:space-between;align-items:baseline;padding:3px 0}
 .mlcrow .mll{font-size:12px;color:var(--text-muted)}
@@ -993,7 +992,7 @@ function applyMLLocks(){
 }
 // メモ用シート（台ごとフォームの上に重ねる）
 function openMemoSheet(){ document.getElementById('memobg').className='modal-bg open'; }
-window.closeMemo=function(){ memoFitViewport(false); document.getElementById('memobg').className='modal-bg'; };
+window.closeMemo=function(){ document.getElementById('memobg').className='modal-bg'; };
 window.openMemoView=function(){
   const memo=document.getElementById('fmm')?.value||'';
   document.getElementById('memottl').textContent='メモ';
@@ -1005,36 +1004,13 @@ window.openMemoEdit=function(){
   const memo=document.getElementById('fmm')?.value||'';
   document.getElementById('memottl').textContent='メモを編集';
   document.getElementById('memohd').innerHTML=`<button class="tlink mut" onclick="closeMemo()">キャンセル</button><button class="tlink" style="margin-left:14px" onclick="memoDone()">完了</button>`;
-  document.getElementById('memobody').innerHTML=`<textarea class="memo-edit" id="memoEditArea" placeholder="メモを入力" oninput="memoCaret()" onkeyup="memoCaret()" onclick="memoCaret()">${mlEsc(memo)}</textarea>`;
+  document.getElementById('memobody').innerHTML=`<textarea class="memo-edit" id="memoEditArea" placeholder="メモを入力">${mlEsc(memo)}</textarea>`;
   openMemoSheet();
-  memoFitViewport(true);
-  setTimeout(()=>{const t=document.getElementById('memoEditArea');if(t){t.focus();t.setSelectionRange(t.value.length,t.value.length);memoCaret();}},80);
+  const t=document.getElementById('memoEditArea');
+  const grow=()=>{ if(!t)return; t.style.height='auto'; t.style.height=t.scrollHeight+'px'; };
+  if(t){ t.addEventListener('input',grow); setTimeout(()=>{ grow(); t.focus(); t.setSelectionRange(t.value.length,t.value.length); },80); }
 };
-// 入力位置が見えるようテキストエリア内部をスクロール（Safari対応のためfont個別指定）
-window.memoCaret=function(){
-  const t=document.getElementById('memoEditArea'); if(!t) return;
-  const m=document.getElementById('__memoMirror')||(()=>{const d=document.createElement('div');d.id='__memoMirror';document.body.appendChild(d);return d;})();
-  const cs=getComputedStyle(t);
-  m.style.cssText=`position:absolute;visibility:hidden;white-space:pre-wrap;word-wrap:break-word;left:-9999px;top:0;width:${t.clientWidth}px;font-size:${cs.fontSize};font-family:${cs.fontFamily};font-weight:${cs.fontWeight};line-height:${cs.lineHeight};letter-spacing:${cs.letterSpacing};padding:${cs.padding};border:${cs.border};box-sizing:border-box`;
-  m.textContent=t.value.substring(0,t.selectionStart);
-  const marker=document.createElement('span'); marker.textContent='\u200b'; m.appendChild(marker);
-  const caretY=marker.offsetTop, lh=parseFloat(cs.lineHeight)||22;
-  const viewTop=t.scrollTop, viewBottom=viewTop+t.clientHeight;
-  if(caretY < viewTop+lh) t.scrollTop=Math.max(0,caretY-lh);
-  else if(caretY+lh > viewBottom) t.scrollTop=caretY+lh-t.clientHeight+4;
-};
-// キーボードで隠れないよう、メモシートを実表示領域(visualViewport)に合わせる
-let __vvHandler=null;
-function memoFitViewport(on){
-  const vv=window.visualViewport; const sheet=document.getElementById('memosheet'); if(!sheet) return;
-  if(on && vv){
-    const fit=()=>{ sheet.style.height=vv.height+'px'; sheet.style.maxHeight=vv.height+'px'; };
-    fit(); __vvHandler=fit; vv.addEventListener('resize',fit); vv.addEventListener('scroll',fit);
-  } else {
-    if(vv&&__vvHandler){ vv.removeEventListener('resize',__vvHandler); vv.removeEventListener('scroll',__vvHandler); __vvHandler=null; }
-    sheet.style.height='88vh'; sheet.style.maxHeight='88vh';
-  }
-}
+window.memoCaret=function(){};
 window.memoDone=function(){
   const t=document.getElementById('memoEditArea'); const fmm=document.getElementById('fmm');
   if(t&&fmm) fmm.value=t.value;
